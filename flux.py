@@ -2,7 +2,7 @@ import numpy as np
 from numpy import linalg as la
 from scipy import constants, sparse, linalg
 import time
-import Sub180221 as Sub
+# import Sub180221 as Sub
 
 
 # notations in comment
