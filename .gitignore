@@ -131,3 +131,7 @@ dmypy.json
 Sub180221.py
 
 */Sub180221.py
+
+test*
+
+.idea
