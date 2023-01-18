@@ -2,6 +2,8 @@ import numpy as np
 from numpy import linalg as la
 from scipy import constants, sparse, linalg
 import time
+
+
 # import Sub180221 as Sub
 
 
@@ -69,14 +71,7 @@ class Flux:
             else:
                 self.T.append(np.random.rand(Dl, self.scale_, Dr, self.N_excited))
 
-        '''def Mps_LQP(TL, UR):
-            A = np.tensordot(TL, UR, (-1, 0))
-            A = A.reshape((A.shape[0], -1))
-            UL, TR = np.linalg.qr(A)
-            TR = TR.reshape(TL.shape)
-            return UL, TR'''
-            
-        def Mps_LQP(T,UR):  # TODO
+        '''def Mps_LQP(T,UR):  # TODO
             """ (0-T-L)(0-UR-1) -> (0-UL-1)(0-Tnew-L) """
             shapeT = np.asarray(np.shape(T))
             rankT = len(shapeT)
@@ -88,7 +83,13 @@ class Flux:
             UL = np.dot(UL,Sign)
             Tnew = np.dot(Sign,Tnew)
             Tnew = np.reshape(Tnew,shapeT)
-            return UL, Tnew
+            return UL, Tnew'''
+
+        def Mps_LQP(T, UR):
+            """ (0-T-L)(0-UR-1) -> (0-UL-1)(0-T1-L) """
+            UL, T1 = linalg.rq(np.tensordot(T, UR, (-1, 0)).reshape((T.shape[0], -1)), mode='economic')
+            T1 = T1.reshape(T.shape)
+            return UL, T1
 
         U = np.eye(np.shape(self.T[-1])[-1])
         for i in range(self.N_J - 1, 0, -1):
@@ -146,10 +147,10 @@ class Flux:
 
     def optimizeT_site(self, site_: int):
         g = self.N_excited  # as noted in reference
-        if self.usingLanczos:   # using block Lanczos
-            HL = self.HL[site_]   # type: np.ndarray
-            HR = self.HR[site_]   # type: np.ndarray
-            T = self.T[site_]   # type: np.ndarray
+        if self.usingLanczos:  # using block Lanczos
+            HL = self.HL[site_]  # type: np.ndarray
+            HR = self.HR[site_]  # type: np.ndarray
+            T = self.T[site_]  # type: np.ndarray
             DT = np.shape(T)
             # H:
             # -1    -2   -3
@@ -157,7 +158,7 @@ class Flux:
             # -4    -5   -6
             '''H = Sub.NCon([HL, self.MPO, HR], [[-1, 1, -4], [1, -5, 2, -2], [-6, 2, -3]])'''
             H = np.einsum(HL, [11, 1, 14], self.MPO, [1, 15, 2, 12], HR, [16, 2, 13], [11, 12, 13, 14, 15, 16])
-            
+
             Psi = [T for _ in range(self.N_Lanczos)]
             Alpha = [np.matrix(np.zeros((g, g)), dtype=complex)
                      for _ in range(self.N_Lanczos)]
@@ -225,7 +226,7 @@ class Flux:
             # -4    -5   -6
             '''A = Sub.Group(A, [[0, 1, 2], [3, 4, 5]])'''
             As = A.shape
-            A = A.reshape((As[0]*As[1]*As[2], As[3]*As[4]*As[5]))
+            A = A.reshape((As[0] * As[1] * As[2], As[3] * As[4] * As[5]))
             Eig, V = sparse.linalg.eigsh(A, k=self.N_excited, which='SA')
             return np.reshape(V, np.shape(T)), Eig
 
