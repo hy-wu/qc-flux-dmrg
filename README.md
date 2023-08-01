@@ -1,4 +1,4 @@
-# qc-flux-dmrg
+# Solving fluxonium qubit using Multi-targeted DMRG
 
 Files:
 
